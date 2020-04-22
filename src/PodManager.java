@@ -1,15 +1,14 @@
 /**
- *
  * @author: Palash Jain
- *
  * @version: 1.0
  */
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Date;
-import java.util.HashMap;
+import java.sql.SQLOutput;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -54,6 +53,8 @@ public class PodManager {
 
         DataStore.setNonRechableDirectly(new HashMap<String, Boolean>());
 
+        DataStore.setPacketsQueue(new ArrayList<DatagramPacket>());
+
     }
 
     /**
@@ -76,6 +77,61 @@ public class PodManager {
         //starting timeout checking thread.
         podManager.checkTimeouts();
 
+        podManager.takeInputs();
+
+        try {
+            if (args.length > 1) {
+                InetAddress destinationAddress = InetAddress.getByName(args[1]);
+                String fileName = args[2];
+            }
+        } catch (Exception e) {
+            System.out.println("Improper inputs given.");
+        }
+
+        // TODO: 4/21/20 add a wait for 30 secs for the network to get stabilize.
+        System.out.println("Press 1 to view routing table and start data transmission.");
+
+    }
+
+    private void takeInputs() throws UnknownHostException {
+        Scanner src = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("Press 1 for routing table, 2 for send data:");
+            int rt = src.nextInt();
+            switch (rt) {
+                case 1:
+                    displayRoutingTable();
+                    break;
+                case 2:
+                    System.out.println("Enter destination IP and file name");
+                    InetAddress destinationIP = InetAddress.getByName(src.next());
+                    String fileName = src.next();
+                    System.out.println(destinationIP);
+                    System.out.println(fileName);
+                    System.out.println("File sent.");
+
+            }
+        }
+    }
+
+    /**
+     * this method displays the routing table.
+     */
+    public static void displayRoutingTable() {
+        Map<String, TableEntry> routingTable = DataStore.getRoutingTable().getRoutingTable();
+        System.out.println("Routing table for node : " + DataStore.getPodID());
+        System.out.println("|-------------------------------------------------------|");
+        System.out.println("| Address\t| Next Hop\t| Cost\t| Time\t\t|");
+        System.out.println("|-------------------------------------------------------|");
+        for (Map.Entry<String, TableEntry> entry : routingTable.entrySet()) {
+            TableEntry currentEntry = entry.getValue();
+            System.out.print("| " + currentEntry.getAddress() + "  \t| ");
+            System.out.print(currentEntry.getNextHop() + "\t| ");
+            System.out.print(currentEntry.getCost() + "\t| ");
+            System.out.println(currentEntry.getTime() + "\t|");
+        }
+        System.out.println("|-------------------------------------------------------|");
     }
 
     /**

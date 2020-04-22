@@ -1,20 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="abfad34b-2538-4228-8c7c-a53db53ba912" name="Default Changelist" comment="" />
+    <list default="true" id="abfad34b-2538-4228-8c7c-a53db53ba912" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/PreparePacketQueue.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/SendData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DataStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/DataStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/PodManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/PodManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ReceivePacket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ReceivePacket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/run/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/src/run/run.sh" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProjectId" id="1amE32yPL0zClhABdOh8hmVSYFd" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="Trial" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Trial" />
+      <module name="CNProject4" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Trial" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="ServiceViewManager">
     <option name="viewStates">
@@ -38,7 +91,46 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1587332165689</updated>
+      <workItem from="1587332170367" duration="17136000" />
+      <workItem from="1587522333197" duration="4358000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="533" y="141" key="#com.intellij.ide.util.MemberChooser" timestamp="1587524199021">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state x="533" y="141" key="#com.intellij.ide.util.MemberChooser/0.0.1440.900@0.0.1440.900" timestamp="1587524199021" />
+    <state x="458" y="204" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1587421121825">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state x="458" y="204" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1440.900@0.0.1440.900" timestamp="1587421121825" />
+    <state x="465" y="313" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1587415798040">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state x="465" y="313" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/0.0.1440.900@0.0.1440.900" timestamp="1587415798040" />
+    <state width="1398" height="245" key="GridCell.Tab.0.bottom" timestamp="1587530928560">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state width="1398" height="245" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1587530928560" />
+    <state width="1398" height="245" key="GridCell.Tab.0.center" timestamp="1587530928557">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state width="1398" height="245" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1587530928557" />
+    <state width="1398" height="245" key="GridCell.Tab.0.left" timestamp="1587530928556">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state width="1398" height="245" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1587530928556" />
+    <state width="1398" height="245" key="GridCell.Tab.0.right" timestamp="1587530928559">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state width="1398" height="245" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1587530928559" />
+    <state x="385" y="196" width="670" height="676" key="search.everywhere.popup" timestamp="1587524943433">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state x="385" y="196" width="670" height="676" key="search.everywhere.popup/0.0.1440.900@0.0.1440.900" timestamp="1587524943433" />
   </component>
 </project>

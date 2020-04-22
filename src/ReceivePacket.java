@@ -126,12 +126,15 @@ public class ReceivePacket extends Thread {
         } catch (Exception e) {
             System.out.println(e);
         }
-        displayRoutingTable();
+//        displayRoutingTable();
+
+        // TODO: 4/20/20 call display when a new entry comes.
 
         if (triggerFlag) {
-            // TODO: 2/29/20 send triggered update.
             SendPacket sendPacket = new SendPacket();
             sendPacket.sendPacket();
+
+            displayRoutingTable();
         }
     }
 

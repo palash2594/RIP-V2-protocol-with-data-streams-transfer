@@ -7,7 +7,7 @@
 node run/run.js $1 &
 
 #then wait 10 seconds to make sure the commands came and executed
-sleep 5
+sleep 20
 
 #finally, start the initial program
 java PodManager $1
