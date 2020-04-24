@@ -1,11 +1,14 @@
+import javax.xml.crypto.Data;
 import java.io.*;
+import java.math.BigInteger;
 import java.net.*;
+import java.security.MessageDigest;
 
 /**
  * this class sends the self data and waits for acknowledgement.
  */
 
-public class SendSelfData {
+public class SendSelfData extends Thread {
     private DatagramSocket socket;
     private InetAddress address;
 
@@ -14,10 +17,24 @@ public class SendSelfData {
     private InetAddress destinationIP;
     private String uniquePacketIdentifier;
     private long packetSentTime;
+    private String fileName;
 
-    public SendSelfData() throws SocketException, UnknownHostException {
+    public void run() {
+        System.out.println("inside send data");
+        sendFileData();
+    }
+
+    public SendSelfData(InetAddress destinationIP, String fileName) throws SocketException, UnknownHostException {
+        System.out.println("Hello");
         socket = new DatagramSocket();
         address = InetAddress.getByName("localhost");
+        this.destinationIP = destinationIP;
+        this.fileName = fileName;
+    }
+
+    public String findTheNextHopIp() {
+        String nextHopIP = DataStore.getAddressToIPMapping().get(destinationIP.getHostAddress().trim());
+        return nextHopIP;
     }
 
     public byte[] convertIPToByteArray(InetAddress ipAddress) {
@@ -29,25 +46,99 @@ public class SendSelfData {
         return ipBytes;
     }
 
-    public byte[] fillUpDataToSend(byte[] bufferFileData, InetAddress destinationIP) throws UnknownHostException {
-        packetNumber = (packetNumber + 1) % 127;
-        // first byte for packet/ acknowledgement
-        byte firstByte = 0;
-
-        // add source address
-        InetAddress sourceIPAddress = InetAddress.getLocalHost();
-        byte[] sourceIPBytes = convertIPToByteArray(sourceIPAddress);
-
-        // add destination address
-        byte[] destinationIPBytes = convertIPToByteArray(destinationIP);
-
-        // add unique packet identifier -> sender ID + packet number
-        uniquePacketIdentifier = String.valueOf(DataStore.getPodID()).concat(String.valueOf(packetNumber));
+    public byte[] getUniquePacketIdentifier() {
         byte[] uniquePacketIdentifierBytes = new byte[2];
         uniquePacketIdentifierBytes[0] = (byte) DataStore.getPodID();
         uniquePacketIdentifierBytes[1] = (byte) packetNumber;
 
+        System.out.println("UID : ");
+        System.out.println(uniquePacketIdentifierBytes[0] + " " + uniquePacketIdentifierBytes[1]);
+        return uniquePacketIdentifierBytes;
+    }
+
+    public byte[] getOffset(int offset) {
+        String binary = Integer.toBinaryString(offset);
+        int len = binary.length();
+
+        for (int i = 0; i < 16 - len; i++) {
+            binary = "0" + binary;
+        }
+        byte[] offsetBytes = new BigInteger(binary, 2).toByteArray();
+
+        return offsetBytes;
+    }
+
+    public void fillUpDataToSend(byte[] bufferFileData, int offset) throws UnknownHostException {
+        packetNumber = (packetNumber + 1) % 127;
+        // first byte for packet/ acknowledgement
+        byte firstByte = 0;
+
+        // add source address -> 4 bytes.
+        InetAddress sourceIPAddress = InetAddress.getByName(DataStore.getPodAddress());
+        byte[] sourceIPBytes = convertIPToByteArray(sourceIPAddress);
+
+        // add destination address -> 4 bytes.
+        byte[] destinationIPBytes = convertIPToByteArray(destinationIP);
+
+        // add unique packet identifier -> sender ID + packet number -> 2 bytes.
+        uniquePacketIdentifier = String.valueOf(DataStore.getPodID()) + "_" + String.valueOf(packetNumber);
+        byte[] uniquePacketIdentifierBytes = getUniquePacketIdentifier();
+
+        // offset -> 2 bytes.
+        byte[] offsetBytes = getOffset(offset);
+
+        // declaring the data in bytes.
         dataToSend = new byte[bufferFileData.length + sourceIPBytes.length +
+                destinationIPBytes.length + uniquePacketIdentifierBytes.length + offsetBytes.length + 1];
+
+        System.out.println("size " + dataToSend.length);
+
+        // filling up all the data in dataToSend.
+        dataToSend[0] = firstByte;
+        System.arraycopy(sourceIPBytes, 0, dataToSend, 1, sourceIPBytes.length);
+        System.arraycopy(destinationIPBytes, 0, dataToSend, sourceIPBytes.length + 1,
+                destinationIPBytes.length);
+        System.arraycopy(uniquePacketIdentifierBytes, 0, dataToSend,
+                sourceIPBytes.length +
+                        destinationIPBytes.length + 1
+                , uniquePacketIdentifierBytes.length);
+        System.arraycopy(offsetBytes, 0, dataToSend,
+                sourceIPBytes.length +
+                        destinationIPBytes.length +
+                        uniquePacketIdentifierBytes.length + 1, offsetBytes.length);
+        System.arraycopy(bufferFileData, 0, dataToSend,
+                sourceIPBytes.length +
+                        destinationIPBytes.length +
+                        uniquePacketIdentifierBytes.length +
+                        offsetBytes.length + 1,
+                bufferFileData.length);
+
+        System.out.println("reached until here.");
+
+    }
+
+    public void buildFirstPacket() throws UnknownHostException {
+        packetNumber = (packetNumber + 1) % 127;
+
+        // data indicator byte -> 1 byte.
+        byte firstByte = 0;
+
+        // add source address -> 4 bytes.
+        InetAddress sourceIPAddress = InetAddress.getByName(DataStore.getPodAddress());
+        byte[] sourceIPBytes = convertIPToByteArray(sourceIPAddress);
+
+        // add destination address -> 4 bytes.
+        byte[] destinationIPBytes = convertIPToByteArray(destinationIP);
+
+        // add unique packet identifier -> sender ID + packet number -> 2 bytes.
+        uniquePacketIdentifier = String.valueOf(DataStore.getPodID()) + "_" + String.valueOf(packetNumber);
+        byte[] uniquePacketIdentifierBytes = getUniquePacketIdentifier();
+
+        // name of the file.
+        byte[] fileNameBytes = fileName.getBytes();
+
+        // declaring the data in bytes.
+        dataToSend = new byte[fileNameBytes.length + sourceIPBytes.length +
                 destinationIPBytes.length + uniquePacketIdentifierBytes.length + 1];
 
         // filling up all the data in dataToSend.
@@ -56,12 +147,14 @@ public class SendSelfData {
         System.arraycopy(destinationIPBytes, 0, dataToSend, sourceIPBytes.length + 1,
                 destinationIPBytes.length);
         System.arraycopy(uniquePacketIdentifierBytes, 0, dataToSend,
-                sourceIPBytes.length + destinationIPBytes.length + 1
+                sourceIPBytes.length +
+                        destinationIPBytes.length + 1
                 , uniquePacketIdentifierBytes.length);
-        System.arraycopy(bufferFileData, 0, dataToSend, sourceIPBytes.length +
-                destinationIPBytes.length + uniquePacketIdentifierBytes.length + 1, bufferFileData.length);
-
-        return dataToSend;
+        System.arraycopy(fileNameBytes, 0, dataToSend,
+                sourceIPBytes.length +
+                        destinationIPBytes.length +
+                        uniquePacketIdentifierBytes.length + 1,
+                fileNameBytes.length);
     }
 
     public void waitForAcknowledgement() throws IOException {
@@ -69,7 +162,8 @@ public class SendSelfData {
         while (true) {
             if (DataStore.acknowledgementID.equals(uniquePacketIdentifier)) {
                 // acknowledgement received.
-                DataStore.acknowledgementID = "NA";
+//                DataStore.acknowledgementID = "NA";
+                System.out.println("hellos " + DataStore.acknowledgementID);
                 break;
             }
             if (System.currentTimeMillis() - packetSentTime > 1000) {
@@ -79,10 +173,30 @@ public class SendSelfData {
         }
     }
 
+    private static String checksum(String filepath, MessageDigest md) throws IOException {
+
+        try (InputStream fis = new FileInputStream(filepath)) {
+            byte[] buffer = new byte[1024];
+            int nread;
+            while ((nread = fis.read(buffer)) != -1) {
+                md.update(buffer, 0, nread);
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (byte b : md.digest()) {
+            result.append(String.format("%02x", b));
+        }
+        return result.toString();
+
+    }
+
     public void sendData() throws IOException {
+        System.out.println("sending this packet " + packetNumber);
         socket = new DatagramSocket(4446);
+        InetAddress nextHopIP = InetAddress.getByName(findTheNextHopIp());
         DatagramPacket packet
-                = new DatagramPacket(dataToSend, dataToSend.length, destinationIP, 4445);
+                = new DatagramPacket(dataToSend, dataToSend.length, nextHopIP, 4445);
         DataStore.getPacketsQueue().add(packet);
         socket.send(packet);
         socket.close();
@@ -92,7 +206,7 @@ public class SendSelfData {
         waitForAcknowledgement();
     }
 
-    public void sendFileData(InetAddress destinationIP, String fileName) {
+    public void sendFileData() {
         this.destinationIP = destinationIP;
         BufferedInputStream bufferedInputStream = null;
         try {
@@ -102,12 +216,17 @@ public class SendSelfData {
             System.err.println("File error " + exception.getMessage());
         }
 
-        byte[] bufferFileData = new byte[30000];
+        byte[] bufferFileData = new byte[DataStore.PACKET_DATA_SIZE];
         int offset = 0;
 
         try {
+            buildFirstPacket();
+            sendData();
+            waitForAcknowledgement();
+
+            System.out.println("first packet sent");
             while ((offset = bufferedInputStream.read(bufferFileData)) > 0) {
-                fillUpDataToSend(bufferFileData, destinationIP);
+                fillUpDataToSend(bufferFileData, offset);
                 sendData();
                 waitForAcknowledgement();
             }
@@ -115,7 +234,12 @@ public class SendSelfData {
             // making it zero for the next file.
             packetNumber = 0;
 
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String hex = checksum(System.getProperty("user.dir") + "//" + fileName, md);
+            System.out.println("\nHash of the file: \n" + hex);
+
         } catch (Exception e) {
+            System.out.println("this exception");
             System.out.println(e);
         }
 

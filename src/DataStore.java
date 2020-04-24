@@ -5,6 +5,7 @@
  * @version: 1.0
  */
 
+import java.io.BufferedOutputStream;
 import java.net.DatagramPacket;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +26,8 @@ public class DataStore {
     public final static String DEFAULT_IP = "0.0.0.0";
 
     public static String acknowledgementID = "NA";
+    public final static int PACKET_DATA_SIZE = 20000;
+    public final static int PACKET_TOTAL_SIZE = 20000 + 13;
 
     private static int podID;
     private static String podIP;
@@ -37,6 +40,33 @@ public class DataStore {
     // using synchronized array list.
     private static List<DatagramPacket> packetsQueue = Collections.synchronizedList(new ArrayList<DatagramPacket>());
     private static Map<String, String> nextHopIPToPodIP;
+    private static Map<String, String> podIPtoNextHopIP;
+    private static Map<String, List<byte[]>> outputData;
+    private static Map<String, BufferedOutputStream> outputStreams;
+
+    public static Map<String, BufferedOutputStream> getOutputStreams() {
+        return outputStreams;
+    }
+
+    public static void setOutputStreams(Map<String, BufferedOutputStream> outputStreams) {
+        DataStore.outputStreams = outputStreams;
+    }
+
+    public static Map<String, List<byte[]>> getOutputData() {
+        return outputData;
+    }
+
+    public static void setOutputData(Map<String, List<byte[]>> outputData) {
+        DataStore.outputData = outputData;
+    }
+
+    public static Map<String, String> getPodIPtoNextHopIP() {
+        return podIPtoNextHopIP;
+    }
+
+    public static void setPodIPtoNextHopIP(Map<String, String> podIPtoNextHopIP) {
+        DataStore.podIPtoNextHopIP = podIPtoNextHopIP;
+    }
 
     public static Map<String, String> getNextHopIPToPodIP() {
         return nextHopIPToPodIP;

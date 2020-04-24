@@ -1,10 +1,9 @@
 /**
- *
  * @author: Palash Jain
- *
  * @version: 1.0
  */
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -88,6 +87,14 @@ public class ReceivePacket extends Thread {
                     DataStore.getAddressToIPMapping().put(currentEntryAddress, receivedIP);
                 }
 
+                // proj 4 addition.
+                if (currentTableEntry.getCost() == 0) {
+                    String currentNextHopAddress = currentTableEntry.getNextHop();
+                    if (!DataStore.getNextHopIPToPodIP().containsKey(currentNextHopAddress)) {
+                        DataStore.getNextHopIPToPodIP().put(currentNextHopAddress, currentEntryAddress);
+                    }
+                }
+
                 // calculating new cost.
                 int newCost = currentTableEntry.getCost() + 1;
 
@@ -99,6 +106,7 @@ public class ReceivePacket extends Thread {
                         currentTableEntry.setCost(newCost);
                     }
                     myRoutingTable.put(entry.getKey(), currentTableEntry);
+                    myRoutingTable.get(entry.getKey()).setTime(System.currentTimeMillis());
                 } else { // existing entry.
 
                     // TODO: 3/1/20 changing cost to the cost received by via node to destination node.
@@ -122,6 +130,10 @@ public class ReceivePacket extends Thread {
                         triggerFlag = true;
                     }
                 }
+
+                // proj 4 addition.
+                DataStore.getAddressToIPMapping().put(currentEntryAddress,
+                        myRoutingTable.get(currentEntryAddress).getNextHop());
             }
         } catch (Exception e) {
             System.out.println(e);

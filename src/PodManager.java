@@ -39,7 +39,7 @@ public class PodManager {
 
         int noOfProcessors = Runtime.getRuntime().availableProcessors();
         // Setting the Threadpool executor.
-        DataStore.setExecutor((ThreadPoolExecutor) Executors.newFixedThreadPool(noOfProcessors));
+        DataStore.setExecutor((ThreadPoolExecutor) Executors.newFixedThreadPool(10));
         executor = DataStore.getExecutor();
 
         // initializing the routing table.
@@ -54,6 +54,9 @@ public class PodManager {
         DataStore.setNonRechableDirectly(new HashMap<String, Boolean>());
 
         DataStore.setPacketsQueue(new ArrayList<DatagramPacket>());
+        DataStore.setNextHopIPToPodIP(new HashMap<>());
+        DataStore.setOutputData(new HashMap<>());
+        DataStore.setOutputStreams(new HashMap<>());
 
     }
 
@@ -93,8 +96,13 @@ public class PodManager {
 
     }
 
-    private void takeInputs() throws UnknownHostException {
+    private void takeInputs() throws UnknownHostException, InterruptedException {
+        System.out.println("Waiting for network to get stabilize.");
+        Thread.sleep(2000);
         Scanner src = new Scanner(System.in);
+
+        PodManager manager = new PodManager();
+        manager.receiveData();
 
         while (true) {
             System.out.println("Press 1 for routing table, 2 for send data:");
@@ -105,12 +113,11 @@ public class PodManager {
                     break;
                 case 2:
                     System.out.println("Enter destination IP and file name");
-                    InetAddress destinationIP = InetAddress.getByName(src.next());
+                    InetAddress destinationIP = InetAddress.getByName(src.next().trim());
                     String fileName = src.next();
                     System.out.println(destinationIP);
                     System.out.println(fileName);
-                    System.out.println("File sent.");
-
+                    manager.sendData(destinationIP, fileName);
             }
         }
     }
@@ -166,6 +173,26 @@ public class PodManager {
         try {
             CheckTimeouts checkTimeouts = new CheckTimeouts();
             executor.execute(checkTimeouts);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void sendData(InetAddress destinationIP, String fileName) {
+        try {
+            System.out.println("sending data");
+            SendSelfData sendSelfData = new SendSelfData(destinationIP, fileName);
+            System.out.println("Hi");
+            executor.execute(sendSelfData);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void receiveData() {
+        try {
+            Listener listener = new Listener();
+            executor.execute(listener);
         } catch (Exception e) {
             System.out.println(e);
         }
