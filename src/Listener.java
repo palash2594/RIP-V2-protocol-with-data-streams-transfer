@@ -18,6 +18,7 @@ public class Listener extends Thread {
     private byte[] buf = new byte[DataStore.PACKET_TOTAL_SIZE];
     private Map<String, Byte> lastPacketReceived = new HashMap<>();
     private String output = "";
+    private Map<String, String> fileNames;
 
     public void run() {
         try {
@@ -37,8 +38,9 @@ public class Listener extends Thread {
         return ip;
     }
 
-    public String getFileName(byte[] data) {
-        String fileName = new String(Arrays.copyOfRange(data, 11, data.length));
+    public String getFileName(byte[] data, int packetLength) {
+        System.out.println("getting first file: " + data.length);
+        String fileName = new String(Arrays.copyOfRange(data, 11, packetLength));
         return fileName.trim();
     }
 
@@ -137,19 +139,22 @@ public class Listener extends Thread {
         socket.close();
     }
 
-    public void handleLocalDataPacket(byte[] receivedPacket) throws IOException {
+    public void handleLocalDataPacket(byte[] receivedPacket, int packetLength) throws IOException {
         System.out.println("It's local.");
         String sourceIP = extractIP(receivedPacket, 1);
         if (!DataStore.getOutputStreams().containsKey(sourceIP)) {
             // first packet from the source.
-            String fileName = getFileName(receivedPacket);
+            String fileName = getFileName(receivedPacket, packetLength);
             FileOutputStream fout = null;
+            fileNames.put(sourceIP, fileName);
 
             try {
                 output = sourceIP + "_" + fileName;
+                System.out.println("length of file, first packet " + output.length());
                 fout = new FileOutputStream(output);
             } catch (FileNotFoundException e) {
                 System.out.println("File cannot be created : " + e);
+                return;
             }
 
             BufferedOutputStream bout = new BufferedOutputStream(fout);
@@ -193,7 +198,7 @@ public class Listener extends Thread {
 
                     MessageDigest md = MessageDigest.getInstance("SHA-256");
                     System.out.println(output);
-                    String hex = checksum(System.getProperty("user.dir") + "//" + output.trim(), md);
+                    String hex = checksum(System.getProperty("user.dir") + "//" + fileNames.get(sourceIP).trim(), md);
                     System.out.println("\nHash of the file: \n" + hex);
 
                 } else {
@@ -246,7 +251,7 @@ public class Listener extends Thread {
         System.out.println("Data value - " + DataStore.acknowledgementID);
     }
 
-    public void checkPacketDestination(byte[] receivedPacket) throws IOException {
+    public void checkPacketDestination(byte[] receivedPacket, int packetLength) throws IOException {
         System.out.print("In check packet" );
         String destinationIP = extractIP(receivedPacket, 5).trim();
         if (DataStore.getPodAddress().equals(destinationIP)) {
@@ -254,7 +259,7 @@ public class Listener extends Thread {
             // packet belongs to itself.
             if (receivedPacket[0] == 0) {
                 // data packet -> this is the base station.
-                handleLocalDataPacket(receivedPacket);
+                handleLocalDataPacket(receivedPacket, packetLength);
             } else{
                 // acknowledgement.
                 System.out.println("Acknowledgement received.");
@@ -263,7 +268,8 @@ public class Listener extends Thread {
         } else {
             // foreign packet.
             try {
-                handleForeignDataPacket(receivedPacket, InetAddress.getByName(destinationIP));
+                byte[] dataToForward = Arrays.copyOfRange(receivedPacket, 0, packetLength);
+                handleForeignDataPacket(dataToForward, InetAddress.getByName(destinationIP));
             } catch (SocketException | UnknownHostException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -275,16 +281,18 @@ public class Listener extends Thread {
     public void packetListener() throws IOException {
         System.out.println("listening..");
 
+        fileNames = new HashMap<>();
+
         while (true) {
             socket = new DatagramSocket(4445);
             // receiving the packet.
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             socket.receive(packet);
-            System.out.println("Packet received. ");
+            System.out.println("Packet received. " + packet.getLength());
 
             byte[] receivedPacket = packet.getData();
             socket.close();
-            checkPacketDestination(receivedPacket);
+            checkPacketDestination(receivedPacket, packet.getLength());
 
             // sending the acknowledgement back.
         }

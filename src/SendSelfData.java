@@ -118,6 +118,7 @@ public class SendSelfData extends Thread {
     }
 
     public void buildFirstPacket() throws UnknownHostException {
+        System.out.println("sending first packet.");
         packetNumber = (packetNumber + 1) % 127;
 
         // data indicator byte -> 1 byte.
@@ -155,6 +156,7 @@ public class SendSelfData extends Thread {
                         destinationIPBytes.length +
                         uniquePacketIdentifierBytes.length + 1,
                 fileNameBytes.length);
+        System.out.println("first packet length: " + dataToSend.length);
     }
 
     public void waitForAcknowledgement() throws IOException {
@@ -166,7 +168,7 @@ public class SendSelfData extends Thread {
                 System.out.println("hellos " + DataStore.acknowledgementID);
                 break;
             }
-            if (System.currentTimeMillis() - packetSentTime > 1000) {
+            if (System.currentTimeMillis() - packetSentTime > 100) {
                 // timeout for acknowledgement.
                 sendData();
             }
