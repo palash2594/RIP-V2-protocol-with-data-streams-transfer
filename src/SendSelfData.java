@@ -195,7 +195,7 @@ public class SendSelfData extends Thread {
 
     public void sendData() throws IOException {
         System.out.println("sending this packet " + packetNumber);
-        socket = new DatagramSocket(4446);
+        socket = new DatagramSocket(4449);
         InetAddress nextHopIP = InetAddress.getByName(findTheNextHopIp());
         DatagramPacket packet
                 = new DatagramPacket(dataToSend, dataToSend.length, nextHopIP, 4445);

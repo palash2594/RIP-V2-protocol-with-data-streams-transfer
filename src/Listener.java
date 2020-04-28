@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.*;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -197,13 +196,11 @@ public class Listener extends Thread {
 
 
                     MessageDigest md = MessageDigest.getInstance("SHA-256");
-                    System.out.println(output);
                     String hex = checksum(System.getProperty("user.dir") + "//" + fileNames.get(sourceIP).trim(), md);
                     System.out.println("\nHash of the file: \n" + hex);
 
                 } else {
                     // not the last packet.
-                    System.out.println("writing..." + filteredData.length);
                     streams.get(sourceIP).write(filteredData);
                 }
             } catch (Exception  e) {

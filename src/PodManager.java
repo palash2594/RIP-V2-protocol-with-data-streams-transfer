@@ -94,6 +94,7 @@ public class PodManager {
         // TODO: 4/21/20 add a wait for 30 secs for the network to get stabilize.
         System.out.println("Press 1 to view routing table and start data transmission.");
 
+
     }
 
     private void takeInputs() throws UnknownHostException, InterruptedException {
