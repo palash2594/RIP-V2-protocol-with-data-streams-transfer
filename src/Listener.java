@@ -15,7 +15,7 @@ import java.util.Map;
 public class Listener extends Thread {
     private DatagramSocket socket;
     private byte[] buf = new byte[DataStore.PACKET_TOTAL_SIZE];
-    private Map<String, Byte> lastPacketReceived = new HashMap<>();
+    private Map<String, String> lastPacketReceived = new HashMap<>();
     private String output = "";
     private Map<String, String> fileNames;
 
@@ -41,6 +41,15 @@ public class Listener extends Thread {
         System.out.println("getting first file: " + data.length);
         String fileName = new String(Arrays.copyOfRange(data, 11, packetLength));
         return fileName.trim();
+    }
+
+    public boolean checkIfLastPacket(byte[] data, int packetLength) {
+        System.out.println("Checking for last packet " + data.length);
+        String eof = new String(Arrays.copyOfRange(data, 11, packetLength));
+        if (eof.equals("EOF")) {
+            return true;
+        }
+        return false;
     }
 
     public byte[] filterData(byte[] data) {
@@ -141,11 +150,16 @@ public class Listener extends Thread {
     public void handleLocalDataPacket(byte[] receivedPacket, int packetLength) throws IOException {
         System.out.println("It's local.");
         String sourceIP = extractIP(receivedPacket, 1);
-        if (!DataStore.getOutputStreams().containsKey(sourceIP)) {
+        String uniquePacketIdentifier = getUniquePacketIdentifier(receivedPacket);
+        Map<String, BufferedOutputStream> streams = DataStore.getOutputStreams();
+        if (!streams.containsKey(sourceIP)) {
             // first packet from the source.
             String fileName = getFileName(receivedPacket, packetLength);
             FileOutputStream fout = null;
-            fileNames.put(sourceIP, fileName);
+            if (!fileName.equals("EOF")) {
+                fileNames.put(sourceIP, fileName);
+            }
+            System.out.println("putting file name: " + fileName);
 
             try {
                 output = sourceIP + "_" + fileName;
@@ -157,58 +171,59 @@ public class Listener extends Thread {
             }
 
             BufferedOutputStream bout = new BufferedOutputStream(fout);
-            DataStore.getOutputStreams().put(sourceIP, bout);
+            streams.put(sourceIP, bout);
 
             // the packet number is present at the 10th index.
-            lastPacketReceived.put(sourceIP, receivedPacket[10]);
+            lastPacketReceived.put(sourceIP, uniquePacketIdentifier);
         } else {
             // remaining packets.
 
             // check for duplicate packet.
-            if (lastPacketReceived.get(sourceIP) == receivedPacket[10]) {
+            if (lastPacketReceived.get(sourceIP).equals(uniquePacketIdentifier)) {
                 // duplicate packet.
                 sendAcknowledgement(sourceIP, receivedPacket);
                 return;
             } else {
                 // update the last packet received for the particular source.
-                lastPacketReceived.put(sourceIP, receivedPacket[10]);
+                lastPacketReceived.put(sourceIP, uniquePacketIdentifier);
             }
 
             byte[] filteredData = filterData(receivedPacket);
 
-            Map<String, BufferedOutputStream> streams = DataStore.getOutputStreams();
             try {
-                if (filteredData.length < DataStore.PACKET_DATA_SIZE) {
+                if (filteredData.length < DataStore.PACKET_DATA_SIZE && checkIfLastPacket(receivedPacket, packetLength)) {
                     // last packet
                     streams.get(sourceIP).write(filteredData);
                     streams.get(sourceIP).flush();
-                    // data completely written.
-                    streams.remove(sourceIP);
                     System.out.println("File received.");
 
                     System.out.println("\nList of files in the directory, to verify if the file is created:");
                     File f = new File(System.getProperty("user.dir"));
                     File[] list = f.listFiles();
-                    for ( File f1 : list) {
+                    for (File f1 : list) {
                         System.out.print(f1.getName() + " | ");
                     }
                     System.out.println();
 
 
                     MessageDigest md = MessageDigest.getInstance("SHA-256");
+                    System.out.println("File name: " + fileNames.get(sourceIP));
                     String hex = checksum(System.getProperty("user.dir") + "//" + fileNames.get(sourceIP).trim(), md);
                     System.out.println("\nHash of the file: \n" + hex);
+
+                    // data completely written.
+                    streams.remove(sourceIP);
 
                 } else {
                     // not the last packet.
                     streams.get(sourceIP).write(filteredData);
                 }
-            } catch (Exception  e) {
+            } catch (Exception e) {
                 System.err.println("Error while writing on file : " + e);
             }
         }
 
-        String uniquePacketIdentifier = getUniquePacketIdentifier(receivedPacket);
+        uniquePacketIdentifier = getUniquePacketIdentifier(receivedPacket);
         sendAcknowledgement(sourceIP, receivedPacket);
 
 //        if (DataStore.getOutputData().containsKey(sourceIP)) {
@@ -249,7 +264,7 @@ public class Listener extends Thread {
     }
 
     public void checkPacketDestination(byte[] receivedPacket, int packetLength) throws IOException {
-        System.out.print("In check packet" );
+        System.out.print("In check packet");
         String destinationIP = extractIP(receivedPacket, 5).trim();
         if (DataStore.getPodAddress().equals(destinationIP)) {
             System.out.print("Local packet ");
@@ -257,7 +272,7 @@ public class Listener extends Thread {
             if (receivedPacket[0] == 0) {
                 // data packet -> this is the base station.
                 handleLocalDataPacket(receivedPacket, packetLength);
-            } else{
+            } else {
                 // acknowledgement.
                 System.out.println("Acknowledgement received.");
                 handleAcknowledgement(receivedPacket);

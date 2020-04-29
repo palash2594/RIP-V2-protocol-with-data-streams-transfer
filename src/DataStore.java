@@ -26,8 +26,8 @@ public class DataStore {
     public final static String DEFAULT_IP = "0.0.0.0";
 
     public static String acknowledgementID = "NA";
-    public final static int PACKET_DATA_SIZE = 20000;
-    public final static int PACKET_TOTAL_SIZE = 20000 + 13;
+    public final static int PACKET_DATA_SIZE = 60000;
+    public final static int PACKET_TOTAL_SIZE = 60000 + 13;
 
     private static int podID;
     private static String podIP;

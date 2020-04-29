@@ -18,6 +18,7 @@ public class SendSelfData extends Thread {
     private String uniquePacketIdentifier;
     private long packetSentTime;
     private String fileName;
+    private String EOF = "EOF";
 
     public void run() {
         System.out.println("inside send data");
@@ -159,6 +160,48 @@ public class SendSelfData extends Thread {
         System.out.println("first packet length: " + dataToSend.length);
     }
 
+    public void buildLastPacket() throws UnknownHostException {
+        System.out.println("sending first packet.");
+        packetNumber = (packetNumber + 1) % 127;
+
+        // data indicator byte -> 1 byte.
+        byte firstByte = 0;
+
+        // add source address -> 4 bytes.
+        InetAddress sourceIPAddress = InetAddress.getByName(DataStore.getPodAddress());
+        byte[] sourceIPBytes = convertIPToByteArray(sourceIPAddress);
+
+        // add destination address -> 4 bytes.
+        byte[] destinationIPBytes = convertIPToByteArray(destinationIP);
+
+        // add unique packet identifier -> sender ID + packet number -> 2 bytes.
+        uniquePacketIdentifier = String.valueOf(DataStore.getPodID()) + "_" + String.valueOf(packetNumber);
+        byte[] uniquePacketIdentifierBytes = getUniquePacketIdentifier();
+
+        // name of the file.
+        byte[] endOfFileBytes = EOF.getBytes();
+
+        // declaring the data in bytes.
+        dataToSend = new byte[endOfFileBytes.length + sourceIPBytes.length +
+                destinationIPBytes.length + uniquePacketIdentifierBytes.length + 1];
+
+        // filling up all the data in dataToSend.
+        dataToSend[0] = firstByte;
+        System.arraycopy(sourceIPBytes, 0, dataToSend, 1, sourceIPBytes.length);
+        System.arraycopy(destinationIPBytes, 0, dataToSend, sourceIPBytes.length + 1,
+                destinationIPBytes.length);
+        System.arraycopy(uniquePacketIdentifierBytes, 0, dataToSend,
+                sourceIPBytes.length +
+                        destinationIPBytes.length + 1
+                , uniquePacketIdentifierBytes.length);
+        System.arraycopy(endOfFileBytes, 0, dataToSend,
+                sourceIPBytes.length +
+                        destinationIPBytes.length +
+                        uniquePacketIdentifierBytes.length + 1,
+                endOfFileBytes.length);
+        System.out.println("first packet length: " + dataToSend.length);
+    }
+
     public void waitForAcknowledgement() throws IOException {
         // wait for the acknowledgement which matches the uniquePacketIdentifier.
         while (true) {
@@ -232,6 +275,10 @@ public class SendSelfData extends Thread {
                 sendData();
                 waitForAcknowledgement();
             }
+
+            buildLastPacket();
+            sendData();
+            waitForAcknowledgement();
 
             // making it zero for the next file.
             packetNumber = 0;
