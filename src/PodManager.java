@@ -80,12 +80,22 @@ public class PodManager {
         //starting timeout checking thread.
         podManager.checkTimeouts();
 
-        podManager.takeInputs();
+        podManager.receiveData();
 
         try {
+            System.out.println("in try");
+            System.out.println(args[1]);
             if (args.length > 1) {
                 InetAddress destinationAddress = InetAddress.getByName(args[1]);
                 String fileName = args[2];
+                System.out.println(args[1]);
+
+                System.out.println("before sleep 30");
+                Thread.sleep(30 * 1000);
+                podManager.displayRoutingTable();
+                Thread.sleep(2 * 1000);
+
+                podManager.sendData(destinationAddress, fileName);
             }
         } catch (Exception e) {
             System.out.println("Improper inputs given.");

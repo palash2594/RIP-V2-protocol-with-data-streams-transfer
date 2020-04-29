@@ -10,5 +10,5 @@ node run/run.js $1 &
 sleep 2
 
 #finally, start the initial program
-java PodManager $1
+java PodManager $1 $2 $3
 
