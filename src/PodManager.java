@@ -89,7 +89,7 @@ public class PodManager {
                 System.out.println(args[1]);
 
                 Thread.sleep(30 * 1000);
-                podManager.displayRoutingTable();
+                displayRoutingTable();
                 Thread.sleep(2 * 1000);
 
                 podManager.sendData(destinationAddress, fileName);

@@ -177,7 +177,7 @@ public class Listener extends Thread {
     public void handleForeignDataPacket(byte[] packetData, InetAddress destinationIP) throws IOException {
         // TODO: 4/22/20 find the next hop ip before sending it.
         // forward the received packet as it is.
-
+        System.out.println("Forwarding packet.");
         socket = new DatagramSocket(4446);
         InetAddress nextHopIP = findTheNextHopIp(destinationIP);
         DatagramPacket packet
