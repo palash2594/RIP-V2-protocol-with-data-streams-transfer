@@ -93,6 +93,9 @@ public class PodManager {
                 Thread.sleep(2 * 1000);
 
                 podManager.sendData(destinationAddress, fileName);
+            } else {
+                Thread.sleep(25 * 1000);
+                displayRoutingTable();
             }
         } catch (Exception e) {
             System.out.println("Improper inputs given.");
