@@ -83,7 +83,6 @@ public class PodManager {
         podManager.receiveData();
 
         try {
-            System.out.println(args[1]);
             if (args.length > 1) {
                 InetAddress destinationAddress = InetAddress.getByName(args[1]);
                 String fileName = args[2];
