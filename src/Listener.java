@@ -1,3 +1,8 @@
+/**
+ * @author: Palash Jain
+ * @version: 1.0
+ */
+
 import java.io.*;
 import java.net.*;
 import java.security.MessageDigest;
@@ -18,6 +23,7 @@ public class Listener extends Thread {
     private Map<String, String> lastPacketReceived = new HashMap<>();
     private String output = "";
     private Map<String, String> fileNames;
+    private Map<String, String> fileHashes;
 
     public void run() {
         try {
@@ -27,6 +33,12 @@ public class Listener extends Thread {
         }
     }
 
+    /**
+     * this function extracts the IP from the packet received.
+     * @param data
+     * @param start
+     * @return
+     */
     public String extractIP(byte[] data, int start) {
         String ip = "";
 
@@ -37,14 +49,24 @@ public class Listener extends Thread {
         return ip;
     }
 
+    /**
+     * this file extracts the file name from the packet.
+     * @param data
+     * @param packetLength
+     * @return
+     */
     public String getFileName(byte[] data, int packetLength) {
-        System.out.println("getting first file: " + data.length);
         String fileName = new String(Arrays.copyOfRange(data, 11, packetLength));
         return fileName.trim();
     }
 
+    /**
+     * this function if the packet is the last function of the file.
+     * @param data
+     * @param packetLength
+     * @return
+     */
     public boolean checkIfLastPacket(byte[] data, int packetLength) {
-        System.out.println("Checking for last packet " + data.length);
         String eof = new String(Arrays.copyOfRange(data, 11, packetLength));
         if (eof.equals("EOF")) {
             return true;
@@ -52,6 +74,11 @@ public class Listener extends Thread {
         return false;
     }
 
+    /**
+     * this function filters the data by separating the data part from the packet.
+     * @param data
+     * @return
+     */
     public byte[] filterData(byte[] data) {
 
         int offset = (data[11] & 0xFF);
@@ -59,11 +86,14 @@ public class Listener extends Thread {
             offset = (offset << 8) | (data[i]) & 0xFF;
         }
 
-        System.out.println("offset " + offset);
-
         return Arrays.copyOfRange(data, 13, offset + 13);
     }
 
+    /**
+     * this function extracts the unique packet identifier from packet.
+     * @param packetData
+     * @return
+     */
     public String getUniquePacketIdentifier(byte[] packetData) {
         String uniquePacketIdentifier = "";
         uniquePacketIdentifier = (packetData[9] & 0xFF) + "_" + (packetData[10] & 0xFF);
@@ -72,6 +102,11 @@ public class Listener extends Thread {
 
     }
 
+    /**
+     * this function IP address to the byte array.
+     * @param ipAddress
+     * @return
+     */
     public byte[] convertIPToByteArray(InetAddress ipAddress) {
         String[] address = ipAddress.getHostAddress().trim().split("\\.");
         byte[] ipBytes = new byte[4];
@@ -81,11 +116,24 @@ public class Listener extends Thread {
         return ipBytes;
     }
 
+    /**
+     * this function finds the nextHopIP for the given destination.
+     * @param destinationIP
+     * @return
+     * @throws UnknownHostException
+     */
     public InetAddress findTheNextHopIp(InetAddress destinationIP) throws UnknownHostException {
         String nextHopIP = DataStore.getAddressToIPMapping().get(destinationIP.getHostAddress().trim());
         return InetAddress.getByName(nextHopIP);
     }
 
+    /**
+     * this function prepares the acknowledgement.
+     * @param destinationIP
+     * @param receivedPacket
+     * @return
+     * @throws UnknownHostException
+     */
     public byte[] prepareAcknowledgement(String destinationIP, byte[] receivedPacket) throws UnknownHostException {
         byte firstByte = 1;
 
@@ -100,9 +148,6 @@ public class Listener extends Thread {
         byte[] uniquePacketIdentifierBytes = new byte[2];
         uniquePacketIdentifierBytes[0] = receivedPacket[9];
         uniquePacketIdentifierBytes[1] = receivedPacket[10];
-
-        System.out.println("UID : ");
-        System.out.println(uniquePacketIdentifierBytes[0] + " " + uniquePacketIdentifierBytes[1]);
 
         // declaring the data in bytes.
         byte[] dataToSend = new byte[sourceIPBytes.length +
@@ -123,6 +168,12 @@ public class Listener extends Thread {
 
     }
 
+    /**
+     * this function handles the foreign packet.
+     * @param packetData
+     * @param destinationIP
+     * @throws IOException
+     */
     public void handleForeignDataPacket(byte[] packetData, InetAddress destinationIP) throws IOException {
         // TODO: 4/22/20 find the next hop ip before sending it.
         // forward the received packet as it is.
@@ -136,21 +187,31 @@ public class Listener extends Thread {
         socket.close();
     }
 
+    /**
+     * this packet sends the acknowledgment for the received packet.
+     * @param destinationIP
+     * @param receivedPacket
+     * @throws IOException
+     */
     public void sendAcknowledgement(String destinationIP, byte[] receivedPacket) throws IOException {
         socket = new DatagramSocket(4446);
-        System.out.println("Sending ack to - ");
         byte[] buffer = prepareAcknowledgement(destinationIP, receivedPacket);
         InetAddress nextHop = findTheNextHopIp(InetAddress.getByName(destinationIP));
-        System.out.println(nextHop.getHostAddress());
         DatagramPacket acknowledgement = new DatagramPacket(buffer, buffer.length, nextHop, 4445);
         socket.send(acknowledgement);
         socket.close();
     }
 
+    /**
+     * this function handles the local packet.
+     * @param receivedPacket
+     * @param packetLength
+     * @throws IOException
+     */
     public void handleLocalDataPacket(byte[] receivedPacket, int packetLength) throws IOException {
-        System.out.println("It's local.");
         String sourceIP = extractIP(receivedPacket, 1);
         String uniquePacketIdentifier = getUniquePacketIdentifier(receivedPacket);
+        System.out.println("Packet received " + uniquePacketIdentifier);
         Map<String, BufferedOutputStream> streams = DataStore.getOutputStreams();
         if (!streams.containsKey(sourceIP)) {
             // first packet from the source.
@@ -159,11 +220,10 @@ public class Listener extends Thread {
             if (!fileName.equals("EOF")) {
                 fileNames.put(sourceIP, fileName);
             }
-            System.out.println("putting file name: " + fileName);
 
             try {
                 output = sourceIP + "_" + fileName;
-                System.out.println("length of file, first packet " + output.length());
+//                System.out.println("length of file, first packet " + output.length());
                 fout = new FileOutputStream(output);
             } catch (FileNotFoundException e) {
                 System.out.println("File cannot be created : " + e);
@@ -213,6 +273,7 @@ public class Listener extends Thread {
 
                     // data completely written.
                     streams.remove(sourceIP);
+                    fileHashes.put(sourceIP, hex);
 
                 } else {
                     // not the last packet.
@@ -223,18 +284,25 @@ public class Listener extends Thread {
             }
         }
 
+        System.out.println("size " + streams.size());
+        if (fileHashes.size() != 0 && streams.size() == 0) {
+            System.out.println("\nHashes of the file received from the sources: ");
+            for (Map.Entry<String, String> entry : fileHashes.entrySet()) {
+                System.out.println(entry.getKey() + " - " + entry.getValue());
+            }
+        }
+
         uniquePacketIdentifier = getUniquePacketIdentifier(receivedPacket);
         sendAcknowledgement(sourceIP, receivedPacket);
-
-//        if (DataStore.getOutputData().containsKey(sourceIP)) {
-//            DataStore.getOutputData().get(sourceIP).add(receivedPacket);
-//        } else {
-//            List<byte[]> newList = new ArrayList<>();
-//            newList.add(receivedPacket);
-//            DataStore.getOutputData().put(sourceIP, newList);
-//        }
     }
 
+    /**
+     * this function calculates the checksum of the given file.
+     * @param filepath
+     * @param md
+     * @return
+     * @throws IOException
+     */
     private static String checksum(String filepath, MessageDigest md) throws IOException {
 
         // DigestInputStream is better, but you also can hash file like this.
@@ -255,19 +323,26 @@ public class Listener extends Thread {
 
     }
 
+    /**
+     * this function handles the acknowledgment.
+     * @param receivedPacket
+     */
     public void handleAcknowledgement(byte[] receivedPacket) {
         String packetIdentifier = String.valueOf(receivedPacket[9] & 0xFF) + "_" +
                 String.valueOf(receivedPacket[10] & 0xFF);
 
         DataStore.acknowledgementID = packetIdentifier;
-        System.out.println("Data value - " + DataStore.acknowledgementID);
     }
 
+    /**
+     * this packet checks if the packet belongs to its machine.
+     * @param receivedPacket
+     * @param packetLength
+     * @throws IOException
+     */
     public void checkPacketDestination(byte[] receivedPacket, int packetLength) throws IOException {
-        System.out.print("In check packet");
         String destinationIP = extractIP(receivedPacket, 5).trim();
         if (DataStore.getPodAddress().equals(destinationIP)) {
-            System.out.print("Local packet ");
             // packet belongs to itself.
             if (receivedPacket[0] == 0) {
                 // data packet -> this is the base station.
@@ -290,23 +365,25 @@ public class Listener extends Thread {
         }
     }
 
+    /**
+     * this is the driver fucntion which listens for the incoming packets.
+     * @throws IOException
+     */
     public void packetListener() throws IOException {
         System.out.println("listening..");
 
         fileNames = new HashMap<>();
+        fileHashes = new HashMap<>();
 
         while (true) {
             socket = new DatagramSocket(4445);
             // receiving the packet.
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             socket.receive(packet);
-            System.out.println("Packet received. " + packet.getLength());
 
             byte[] receivedPacket = packet.getData();
             socket.close();
             checkPacketDestination(receivedPacket, packet.getLength());
-
-            // sending the acknowledgement back.
         }
     }
 }

@@ -1,4 +1,8 @@
-import javax.xml.crypto.Data;
+/**
+ * @author: Palash Jain
+ * @version: 1.0
+ */
+
 import java.io.*;
 import java.math.BigInteger;
 import java.net.*;
@@ -19,12 +23,20 @@ public class SendSelfData extends Thread {
     private long packetSentTime;
     private String fileName;
     private String EOF = "EOF";
+    private String lastAck = "";
 
     public void run() {
         System.out.println("inside send data");
         sendFileData();
     }
 
+    /**
+     * this function sends its own data packet.
+     * @param destinationIP
+     * @param fileName
+     * @throws SocketException
+     * @throws UnknownHostException
+     */
     public SendSelfData(InetAddress destinationIP, String fileName) throws SocketException, UnknownHostException {
         System.out.println("Hello");
         socket = new DatagramSocket();
@@ -33,11 +45,20 @@ public class SendSelfData extends Thread {
         this.fileName = fileName;
     }
 
+    /**
+     * this function finds the next hop based on the destination.
+     * @return
+     */
     public String findTheNextHopIp() {
         String nextHopIP = DataStore.getAddressToIPMapping().get(destinationIP.getHostAddress().trim());
         return nextHopIP;
     }
 
+    /**
+     * this function converts the IP address to the byte array.
+     * @param ipAddress
+     * @return
+     */
     public byte[] convertIPToByteArray(InetAddress ipAddress) {
         String[] address = ipAddress.getHostAddress().trim().split("\\.");
         byte[] ipBytes = new byte[4];
@@ -47,16 +68,23 @@ public class SendSelfData extends Thread {
         return ipBytes;
     }
 
+    /**
+     * this function calculates the unique packet identifier to be associated with
+     * each packet.
+     * @return
+     */
     public byte[] getUniquePacketIdentifier() {
         byte[] uniquePacketIdentifierBytes = new byte[2];
         uniquePacketIdentifierBytes[0] = (byte) DataStore.getPodID();
         uniquePacketIdentifierBytes[1] = (byte) packetNumber;
-
-        System.out.println("UID : ");
-        System.out.println(uniquePacketIdentifierBytes[0] + " " + uniquePacketIdentifierBytes[1]);
         return uniquePacketIdentifierBytes;
     }
 
+    /**
+     * this function converts the offset to the byte array.
+     * @param offset
+     * @return
+     */
     public byte[] getOffset(int offset) {
         String binary = Integer.toBinaryString(offset);
         int len = binary.length();
@@ -69,6 +97,12 @@ public class SendSelfData extends Thread {
         return offsetBytes;
     }
 
+    /**
+     * this function prepares the byte array to be sent.
+     * @param bufferFileData
+     * @param offset
+     * @throws UnknownHostException
+     */
     public void fillUpDataToSend(byte[] bufferFileData, int offset) throws UnknownHostException {
         packetNumber = (packetNumber + 1) % 127;
         // first byte for packet/ acknowledgement
@@ -114,10 +148,12 @@ public class SendSelfData extends Thread {
                         offsetBytes.length + 1,
                 bufferFileData.length);
 
-        System.out.println("reached until here.");
-
     }
 
+    /**
+     * this function build the first packet.
+     * @throws UnknownHostException
+     */
     public void buildFirstPacket() throws UnknownHostException {
         System.out.println("sending first packet.");
         packetNumber = (packetNumber + 1) % 127;
@@ -160,6 +196,10 @@ public class SendSelfData extends Thread {
         System.out.println("first packet length: " + dataToSend.length);
     }
 
+    /**
+     * this function builds the last packet.
+     * @throws UnknownHostException
+     */
     public void buildLastPacket() throws UnknownHostException {
         System.out.println("sending first packet.");
         packetNumber = (packetNumber + 1) % 127;
@@ -202,22 +242,37 @@ public class SendSelfData extends Thread {
         System.out.println("first packet length: " + dataToSend.length);
     }
 
+    /**
+     * this waits for the acknowledgement and resends the previous packet if
+     * no acknowledgement is received.
+     * @throws IOException
+     */
     public void waitForAcknowledgement() throws IOException {
         // wait for the acknowledgement which matches the uniquePacketIdentifier.
         while (true) {
             if (DataStore.acknowledgementID.equals(uniquePacketIdentifier)) {
                 // acknowledgement received.
-//                DataStore.acknowledgementID = "NA";
-                System.out.println("hellos " + DataStore.acknowledgementID);
+                if (!lastAck.equals(DataStore.acknowledgementID)) {
+                    System.out.println("Received Ack for: " + DataStore.acknowledgementID);
+                    lastAck = DataStore.acknowledgementID;
+                }
                 break;
             }
             if (System.currentTimeMillis() - packetSentTime > 100) {
                 // timeout for acknowledgement.
+                System.out.print("Timeout for Acknowledgement.");
                 sendData();
             }
         }
     }
 
+    /**
+     * this function calculates the checksum of the file.
+     * @param filepath
+     * @param md
+     * @return
+     * @throws IOException
+     */
     private static String checksum(String filepath, MessageDigest md) throws IOException {
 
         try (InputStream fis = new FileInputStream(filepath)) {
@@ -236,8 +291,12 @@ public class SendSelfData extends Thread {
 
     }
 
+    /**
+     * this function sends the data packet.
+     * @throws IOException
+     */
     public void sendData() throws IOException {
-        System.out.println("sending this packet " + packetNumber);
+        System.out.println("sending packet " + packetNumber);
         socket = new DatagramSocket(4449);
         InetAddress nextHopIP = InetAddress.getByName(findTheNextHopIp());
         DatagramPacket packet
@@ -251,6 +310,10 @@ public class SendSelfData extends Thread {
         waitForAcknowledgement();
     }
 
+    /**
+     * this is the driver function which sends all the data in the file
+     * packet by packet.
+     */
     public void sendFileData() {
         this.destinationIP = destinationIP;
         BufferedInputStream bufferedInputStream = null;

@@ -83,14 +83,12 @@ public class PodManager {
         podManager.receiveData();
 
         try {
-            System.out.println("in try");
             System.out.println(args[1]);
             if (args.length > 1) {
                 InetAddress destinationAddress = InetAddress.getByName(args[1]);
                 String fileName = args[2];
                 System.out.println(args[1]);
 
-                System.out.println("before sleep 30");
                 Thread.sleep(30 * 1000);
                 podManager.displayRoutingTable();
                 Thread.sleep(2 * 1000);
@@ -100,10 +98,6 @@ public class PodManager {
         } catch (Exception e) {
             System.out.println("Improper inputs given.");
         }
-
-        // TODO: 4/21/20 add a wait for 30 secs for the network to get stabilize.
-        System.out.println("Press 1 to view routing table and start data transmission.");
-
 
     }
 
