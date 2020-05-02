@@ -217,7 +217,7 @@ public class Listener extends Thread {
             // first packet from the source.
             String fileName = getFileName(receivedPacket, packetLength);
             FileOutputStream fout = null;
-            if (!fileName.equals("EOF")) {
+            if (!fileName.equals("EOF") && !fileHashes.containsKey(sourceIP)) {
                 fileNames.put(sourceIP, fileName);
             }
 
@@ -267,7 +267,7 @@ public class Listener extends Thread {
 
 
                     MessageDigest md = MessageDigest.getInstance("SHA-256");
-                    System.out.println("File name: " + fileNames.get(sourceIP));
+                    System.out.println("Received File name: " + fileNames.get(sourceIP));
                     String hex = checksum(System.getProperty("user.dir") + "//" + fileNames.get(sourceIP).trim(), md);
                     System.out.println("\nHash of the file: \n" + hex);
 
@@ -284,7 +284,6 @@ public class Listener extends Thread {
             }
         }
 
-        System.out.println("size " + streams.size());
         if (fileHashes.size() != 0 && streams.size() == 0) {
             System.out.println("\nHashes of the file received from the sources: ");
             for (Map.Entry<String, String> entry : fileHashes.entrySet()) {
